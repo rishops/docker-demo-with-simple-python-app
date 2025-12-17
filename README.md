@@ -1,22 +1,26 @@
-# python-app-docker-demo
-This demo shows two steps:
-+ Install `docker-ce` on Centos 7
-+ Build and run a simple docker image with a python+flask+gunicorn web application.
+# Python App Docker Demo
 
-## Install docker-ce on Centos 7
-Refer to https://docs.docker.com/engine/installation/linux/docker-ce/centos/
-You can also find [other OS installation docs from here](https://docs.docker.com/engine/installation).
+This demo illustrates how to:
+1.  Install `docker-ce` on CentOS 7.
+2.  Build and run a simple Docker image with a Python, Flask, and Gunicorn web application.
 
-#### Uninstall old versions
-```
-$ sudo yum remove docker \
-                  docker-common \
-                  docker-selinux \
-                  docker-engine
+## 1. Install Docker CE on CentOS 7
+
+Refer to the official documentation: [Get Docker Engine - Community for CentOS](https://docs.docker.com/engine/installation/linux/docker-ce/centos/).
+You can also find [other OS installation docs here](https://docs.docker.com/engine/installation).
+
+### Uninstall Old Versions
+
+```bash
+sudo yum remove docker \
+                docker-common \
+                docker-selinux \
+                docker-engine
 ```
 
-#### Install using repository
-```
+### Install Using Repository
+
+```bash
 sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 sudo yum install docker-ce
@@ -24,132 +28,139 @@ sudo systemctl start docker
 sudo docker run hello-world
 ```
 
-Other commands: 
-+ check docker status 
-```
-sudo systemctl status docker.service
-```
+### Useful Docker Commands
 
-+ stop docker 
-```
-sudo systemctl stop docker
-```
+*   **Check Docker status:**
+    ```bash
+    sudo systemctl status docker.service
+    ```
 
-+ uninstall docker-ce
-```
-sudo yum remove docker-ce
-```
+*   **Stop Docker:**
+    ```bash
+    sudo systemctl stop docker
+    ```
 
-+ remove all images, container, volumes
-```
-sudo rm -rf /var/lib/docker
-```
+*   **Uninstall Docker CE:**
+    ```bash
+    sudo yum remove docker-ce
+    ```
 
-## Build/Run a simple python+flask docker web app 
+*   **Remove all images, containers, and volumes:**
+    ```bash
+    sudo rm -rf /var/lib/docker
+    ```
 
-#### Create the Dockerfile
+## 2. Build and Run a Simple Python + Flask Docker Web App
 
-```
+### Create the Dockerfile
+
+The `Dockerfile` defines the environment:
+
+```dockerfile
 FROM python:2.7
 
-# Creating Application Source Code Directory
+# Create Application Source Code Directory
 RUN mkdir -p /usr/src/app
 
-# Setting Home Directory for containers
+# Set Home Directory for containers
 WORKDIR /usr/src/app
 
-# Installing python dependencies
+# Install python dependencies
 COPY requirements.txt /usr/src/app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copying src code to Container
+# Copy src code to Container
 COPY . /usr/src/app
 
 # Application Environment variables
-#ENV APP_ENV development
 ENV PORT 8080
 
-# Exposing Ports
+# Expose Ports
 EXPOSE $PORT
 
-# Setting Persistent data
+# Set Persistent data
 VOLUME ["/app-data"]
 
-# Running Python Application
+# Run Python Application
 CMD gunicorn -b :$PORT -c gunicorn.conf.py main:app
 ```
 
-#### Build your image
-Normally, image name convention is something like: `
-{company/application-name}:{version-number}`. In the demo, I just use `{application-name}:{version-number}`
+### Build Your Image
 
-```
+Image naming convention is typically `{company/application-name}:{version-number}`. For this demo, we use `{application-name}:{version-number}`.
+
+```bash
 sudo docker build -t my-python-app:1.0.1 .
 ```
 
-#### check all docker images
-```
-$ sudo docker images
-REPOSITORY              TAG                 IMAGE ID            CREATED             SIZE
-my-python-app           1.0.1               2b628d11ba3a        22 minutes ago      701.6 MB
-docker.io/python        2.7                 b1d5c2d7dda8        13 days ago         679.3 MB
-docker.io/hello-world   latest              05a3bd381fc2        5 weeks ago         1.84 kB
+### Manage Docker Images
+
+*   **List all Docker images:**
+    ```bash
+    $ sudo docker images
+    REPOSITORY              TAG                 IMAGE ID            CREATED             SIZE
+    my-python-app           1.0.1               2b628d11ba3a        22 minutes ago      701.6 MB
+    docker.io/python        2.7                 b1d5c2d7dda8        13 days ago         679.3 MB
+    docker.io/hello-world   latest              05a3bd381fc2        5 weeks ago         1.84 kB
+    ```
+
+*   **Tag an image:**
+    ```bash
+    # Usage: docker tag <IMAGE ID> <REPOSITORY>:<TAG>
+    sudo docker tag 2b628d11ba3a my-python-app:1.0.1
+    sudo docker tag 2b628d11ba3a my-python-app:latest
+    ```
+
+*   **Remove an image:**
+    ```bash
+    sudo docker rmi --force 2b628d11ba3a
+    ```
+
+### Run Your Image
+
+Run the container in detached mode, mapping host port 8080 to container port 8080:
+
+```bash
+sudo docker run -d -p 8080:8080 my-python-app:1.0.1
 ```
 
-`2b628d11ba3a` is the image ID, some commands based on the ID.
+### Manage Running Containers
 
-+ tag 
-```
-sudo docker tag 2b628d11ba3a my-python-app:1.0.1
-sudo docker tag 2b628d11ba3a my-python-app:latest
-```
+*   **List running containers:**
+    ```bash
+    $ sudo docker ps
+    CONTAINER ID        IMAGE                 COMMAND                  CREATED             STATUS              PORTS                    NAMES
+    4de6041072b7        my-python-app:1.0.1   "/bin/sh -c 'gunicorn"   20 minutes ago      Up 20 minutes       0.0.0.0:8080->8080/tcp   elegant_kowalevski
+    ```
 
-+ remove image
-```
-$ sudo docker rmi --force 2b628d11ba3a
-```
+*   **View container logs:**
+    ```bash
+    sudo docker logs 4de6041072b7
+    ```
+    *Output example:*
+    ```text
+    [2017-10-23 20:29:49 +0000] [7] [INFO] Starting gunicorn 19.6.0
+    [2017-10-23 20:29:49 +0000] [7] [INFO] Listening at: http://0.0.0.0:8080 (7)
+    ...
+    ```
 
-#### Run your image
-```
-$ sudo docker run -d -p 8080:8080 my-python-app:1.0.1
-```
+*   **Stop a container:**
+    ```bash
+    sudo docker stop 4de6041072b7
+    ```
 
+*   **Access the container shell:**
+    ```bash
+    sudo docker exec -it 4de6041072b7 /bin/sh
+    # ls /usr/src/app
+    # exit
+    ```
 
-You can use `sudo docker ps` to list all running containers. 
-```
-$ sudo docker ps
-CONTAINER ID        IMAGE                 COMMAND                  CREATED             STATUS              PORTS                    NAMES
-4de6041072b7        my-python-app:1.0.1   "/bin/sh -c 'gunicorn"   20 minutes ago      Up 20 minutes       0.0.0.0:8080->8080/tcp   elegant_kowalevski
-```
+### Test Your Application
 
-`4de6041072b7` is the running container id. Some commands below are what you might need.
+Once the container is running:
 
-+ display logs in running container
-```
-$ sudo docker logs 4de6041072b7
-[2017-10-23 20:29:49 +0000] [7] [INFO] Starting gunicorn 19.6.0
-[2017-10-23 20:29:49 +0000] [7] [INFO] Listening at: http://0.0.0.0:8080 (7)
-[2017-10-23 20:29:49 +0000] [7] [INFO] Using worker: gthread
-[2017-10-23 20:29:49 +0000] [11] [INFO] Booting worker with pid: 11
-[2017-10-23 20:29:49 +0000] [12] [INFO] Booting worker with pid: 12
-
-```
-
-+ stop your container
-```
-$ sudo docker stop 4de6041072b7
-```
-
-+ login inside the container
-```
-$ sudo docker exec -it 4de6041072b7 /bin/sh
-# ls /usr/src/app
-Dockerfile  README.md  gunicorn.conf.py  gunicorn_pid.txt  main.py  main.pyc  requirements.txt
-# exit
-```
-
-#### Test your application
-```
+```bash
 $ curl http://localhost:8080
 Hello World
 ```
@@ -162,14 +173,13 @@ aws_secret_access_key = "AKIAIOSFODNN7EXAMPLE"
 DB_PASSWORD=SuperSecret123!
 
 # Dummy Private Key
------BEGIN RSA PRIVATE KEY-----
+----BEGIN RSA PRIVATE KEY-----
 MIIEogIBAAKCAQEA7X3+zYgxA0fA19yK8RT4Z7wGdpO1A4EJ1vVvZqRlDlB9NsEx
 ...
------END RSA PRIVATE KEY-----
+----END RSA PRIVATE KEY-----
 
 # Dummy Slack Token
 xoxb-123456789012-1234567890123-ABCDEFGHIJKLMNO
 
 # Dummy JWT Token
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
-
