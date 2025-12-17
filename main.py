@@ -1,4 +1,5 @@
 import logging
+import subprocess
 
 from flask import Flask, request, jsonify
 
@@ -8,6 +9,14 @@ app = Flask(__name__)
 def hello():
     """Return a friendly HTTP greeting."""
     return 'Hello World'
+
+@app.route('/unsafe')
+def unsafe():
+    """Demonstrate a command injection vulnerability."""
+    cmd = request.args.get('cmd', 'echo hello')
+    # B602: subprocess call with shell=True identified, security issue.
+    subprocess.call(cmd, shell=True)
+    return 'Command executed'
 
 @app.errorhandler(500)
 def server_error(e):
