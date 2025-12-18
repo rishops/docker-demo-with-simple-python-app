@@ -1,5 +1,6 @@
 import logging
 import subprocess
+import shlex
 
 from flask import Flask, request, jsonify
 
@@ -15,7 +16,8 @@ def unsafe():
     """Demonstrate a command injection vulnerability."""
     cmd = request.args.get('cmd', 'echo hello')
     # B602: subprocess call with shell=True identified, security issue.
-    subprocess.call(cmd, shell=True)
+    # Fixed by using shlex.split() and removing shell=True (defaults to False)
+    subprocess.call(shlex.split(cmd))
     return 'Command executed'
 
 @app.errorhandler(500)
@@ -27,4 +29,4 @@ def server_error(e):
     """.format(e), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='127.0.0.1', port=8080)
