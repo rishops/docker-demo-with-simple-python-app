@@ -12,10 +12,12 @@ def hello():
 
 @app.route('/unsafe')
 def unsafe():
-    """Demonstrate a command injection vulnerability."""
+    """Demonstrate a command injection vulnerability (Fixed)."""
     cmd = request.args.get('cmd', 'echo hello')
-    # B602: subprocess call with shell=True identified, security issue.
-    subprocess.call(cmd, shell=True)
+    # Fix: Validate and sanitize input, and do not use shell=True
+    # strict sanitization to allow only alphanumeric and spaces
+    safe_arg = "".join(c for c in cmd if c.isalnum() or c.isspace())
+    subprocess.call(['echo', safe_arg], shell=False)
     return 'Command executed'
 
 @app.errorhandler(500)
@@ -27,4 +29,4 @@ def server_error(e):
     """.format(e), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='127.0.0.1', port=8080)
