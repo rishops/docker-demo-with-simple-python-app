@@ -1,6 +1,7 @@
 import logging
 import subprocess
 import shlex
+import os
 
 from flask import Flask, request, jsonify
 
@@ -29,4 +30,6 @@ def server_error(e):
     """.format(e), 500
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8080)
+    host = os.environ.get('HOST', '0.0.0.0')
+    port = int(os.environ.get('PORT', '8080'))
+    app.run(host=host, port=port)
